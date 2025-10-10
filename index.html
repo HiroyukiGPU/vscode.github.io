@@ -94,9 +94,93 @@
         .operator { color: #d4d4d4; }
         .punctuation { color: #d4d4d4; }
         .auto-complete { color: #6e6e6e; }
+        
+        /* ローディング画面 */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: #d4d4d4;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 30px;
+            border: 4px solid #2d2d30;
+            border-top: 4px solid #569cd6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #569cd6, #4ec9b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .loading-text {
+            font-size: 14px;
+            color: #858585;
+            margin-bottom: 25px;
+            min-height: 20px;
+        }
+        
+        .loading-bar {
+            width: 300px;
+            height: 4px;
+            background-color: #2d2d30;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #569cd6, #4ec9b0);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body>
+    <!-- ローディング画面 -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2 class="loading-title">Detecting Code Files...</h2>
+            <p class="loading-text" id="loadingText">Scanning for files...</p>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loadingProgress"></div>
+            </div>
+        </div>
+    </div>
+    
     <div class="editor-wrapper">
         <div class="line-numbers" id="lineNumbers">1</div>
         <div class="code-area" id="codeArea"></div>
@@ -481,13 +565,30 @@
             return shuffled;
         }
         
-        // 数字ファイルを自動検出
+        // ローディング画面を更新
+        function updateLoadingProgress(percent, text) {
+            const loadingText = document.getElementById('loadingText');
+            const loadingProgress = document.getElementById('loadingProgress');
+            
+            if (loadingText) loadingText.textContent = text;
+            if (loadingProgress) loadingProgress.style.width = percent + '%';
+        }
+        
+        // ローディング画面を非表示
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }
+        }
+        
+        // 並列でファイルを検出（高速化）
         async function detectNumberedFiles() {
             console.log('🔍 数字ファイルを自動検出中...');
-            const detectedFiles = [];
-            let fileNumber = 1;
-            let consecutiveMisses = 0;
-            const maxMisses = 3; // 連続して3つ見つからなかったら終了
+            updateLoadingProgress(10, 'Checking for random mode...');
             
             // 0.txtの存在確認（ランダム化フラグ）
             let randomizeOrder = false;
@@ -501,50 +602,67 @@
                 // 0.txtがない場合は通常順
             }
             
-            while (consecutiveMisses < maxMisses) {
-                let foundFile = false;
-                
-                // 各拡張子を試す
-                for (const ext of possibleExtensions) {
-                    const filename = `${fileNumber}.${ext}`;
-                    
-                    // ファイルの存在を確認
-                    try {
-                        const response = await fetch(filename, { method: 'HEAD' });
-                        if (response.ok) {
-                            detectedFiles.push(filename);
-                            console.log(`✓ 見つかりました: ${filename}`);
-                            foundFile = true;
-                            break; // この番号のファイルが見つかったら次の番号へ
+            updateLoadingProgress(20, 'Scanning files in parallel...');
+            
+            // 並列検出（1～50まで一気にチェック）
+            const maxFileNumber = 50;
+            const checkPromises = [];
+            
+            for (let fileNumber = 1; fileNumber <= maxFileNumber; fileNumber++) {
+                const promise = (async (num) => {
+                    // 各拡張子を試す
+                    for (const ext of possibleExtensions) {
+                        const filename = `${num}.${ext}`;
+                        
+                        try {
+                            const response = await fetch(filename, { method: 'HEAD' });
+                            if (response.ok) {
+                                return { number: num, filename };
+                            }
+                        } catch (error) {
+                            // エラーは無視
                         }
-                    } catch (error) {
-                        // エラーは無視して次の拡張子を試す
                     }
-                }
+                    return null;
+                })(fileNumber);
                 
-                if (foundFile) {
-                    consecutiveMisses = 0;
-                } else {
-                    consecutiveMisses++;
-                }
-                
-                fileNumber++;
+                checkPromises.push(promise);
             }
+            
+            updateLoadingProgress(40, 'Processing results...');
+            
+            // すべての結果を待つ
+            const results = await Promise.all(checkPromises);
+            
+            updateLoadingProgress(60, 'Sorting files...');
+            
+            // nullを除外してソート
+            const detectedFiles = results
+                .filter(result => result !== null)
+                .sort((a, b) => a.number - b.number)
+                .map(result => result.filename);
+            
+            updateLoadingProgress(80, `Found ${detectedFiles.length} files...`);
             
             if (detectedFiles.length === 0) {
                 console.error('❌ ファイルが見つかりませんでした');
+                updateLoadingProgress(100, 'No files found!');
                 alert('表示するファイルが見つかりませんでした。\n1.py, 2.java, 3.js などのファイルを配置してください。');
                 return false;
             }
             
+            console.log(`✓ ${detectedFiles.length}個のファイルを検出しました:`, detectedFiles);
+            
             // 0.txtが存在する場合はランダムに並び替え
             if (randomizeOrder) {
+                updateLoadingProgress(90, 'Randomizing order...');
                 codeFiles = shuffleArray(detectedFiles);
                 console.log(`🎲 ランダム順に並び替えました:`, codeFiles);
             } else {
                 codeFiles = detectedFiles;
-                console.log(`✓ ${codeFiles.length}個のファイルを検出しました:`, codeFiles);
             }
+            
+            updateLoadingProgress(100, 'Ready to start!');
             
             return true;
         }
@@ -557,8 +675,16 @@
             const filesDetected = await detectNumberedFiles();
             
             if (filesDetected) {
-                // 最初のファイルを読み込み
-                loadCurrentFile();
+                // 少し待ってからローディング画面を非表示
+                setTimeout(() => {
+                    hideLoadingScreen();
+                    // ローディング画面が消えてから最初のファイルを読み込み
+                    setTimeout(() => {
+                        loadCurrentFile();
+                    }, 300);
+                }, 500);
+            } else {
+                hideLoadingScreen();
             }
         });
     </script>
