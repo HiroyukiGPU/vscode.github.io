@@ -2,7 +2,49 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class LibrarySystem {
+class Book {
+    private int id;
+    private String title;
+    private String author;
+    private boolean isBorrowed;
+    
+    public Book(int id, String title, String author) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.isBorrowed = false;
+    }
+    
+    public void borrow() {
+        if (!isBorrowed) {
+            isBorrowed = true;
+            System.out.println("✓ 「" + title + "」を借りました");
+        } else {
+            System.out.println("✗ 「" + title + "」は貸出中です");
+        }
+    }
+    
+    public void returnBook() {
+        if (isBorrowed) {
+            isBorrowed = false;
+            System.out.println("✓ 「" + title + "」を返却しました");
+        } else {
+            System.out.println("✗ この本は借りられていません");
+        }
+    }
+    
+    public void display() {
+        String status = isBorrowed ? "貸出中" : "在庫あり";
+        System.out.println(String.format("[%d] %s - %s (%s)", 
+            id, title, author, status));
+    }
+    
+    public int getId() { return id; }
+    public String getTitle() { return title; }
+    public boolean getIsBorrowed() { return isBorrowed; }
+}
+
+public class Main {
     
     // 本のクラス（内部クラス）
     static class Book {
