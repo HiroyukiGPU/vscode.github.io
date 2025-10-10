@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Language Code Typing Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            overflow: hidden;
+        }
+
+        .editor-wrapper {
+            display: flex;
+            height: calc(100vh - 42px);
+            width: 100vw;
+        }
+
+        .line-numbers {
+            background-color: #1e1e1e;
+            color: #858585;
+            padding: 20px 10px;
+            text-align: right;
+            user-select: none;
+            min-width: 60px;
+            border-right: 1px solid #2d2d30;
+            font-size: 14px;
+            line-height: 21px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            white-space: pre;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .line-numbers::-webkit-scrollbar {
+            width: 0;
+            display: none;
+        }
+
+        .code-area {
+            flex: 1;
+            background-color: #1e1e1e;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 21px;
+            white-space: pre;
+            position: relative;
+            tab-size: 4;
+            -moz-tab-size: 4;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .code-area::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 18px;
+            background-color: #ffffff;
+            animation: blink 1s infinite;
+            position: relative;
+            top: 3px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Syntax Highlighting */
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; font-style: italic; }
+        .function { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .class-name { color: #4ec9b0; }
+        .property { color: #9cdcfe; }
+        .operator { color: #d4d4d4; }
+        .punctuation { color: #d4d4d4; }
+        .auto-complete { color: #6e6e6e; }
+    </style>
+</head>
+<body>
+    <div class="editor-wrapper">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <div class="code-area" id="codeArea"></div>
+    </div>
+
+    <script>
+        // 自動検出される拡張子リスト
+        const possibleExtensions = [
+            'py', 'java', 'js', 'c', 'cpp', 'cs', 'php', 'kt', 'rb', 'go',
+            'sql', 'ts', 'sh', 'rs', 'dart', 'asm', 'swift', 'r', 'vb',
+            'html', 'css', 'pl', 'd', 'txt'
+        ];
+        
+        let codeFiles = []; // 動的に検出されたファイルリスト
+        let currentFileIndex = 0;
+        let fullCode = '';
+        let currentIndex = 0;
+        let typingSpeed = 20; // ミリ秒（20ms = 50文字/秒）
+        let typingInterval = null;
+        let displayedCode = ''; // 実際に表示されるコード（自動補完含む）
+        let autoCompletedChars = 0; // 自動補完で追加された文字数
+        let currentLanguage = 'javascript'; // 現在の言語
+        
+        // ファイル拡張子から言語を判定
+        function detectLanguage(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const langMap = {
+                'py': 'python',
+                'java': 'java',
+                'js': 'javascript',
+                'c': 'c',
+                'cpp': 'cpp',
+                'cc': 'cpp',
+                'cxx': 'cpp',
+                'cs': 'csharp',
+                'php': 'php',
+                'kt': 'kotlin',
+                'rb': 'ruby',
+                'go': 'go',
+                'sql': 'sql',
+                'ts': 'typescript',
+                'sh': 'shell',
+                'bash': 'shell',
+                'rs': 'rust',
+                'dart': 'dart',
+                'asm': 'assembly',
+                's': 'assembly',
+                'swift': 'swift',
+                'r': 'r',
+                'vb': 'vb',
+                'html': 'html',
+                'htm': 'html',
+                'css': 'css',
+                'pl': 'perl',
+                'd': 'd'
+            };
+            return langMap[ext] || 'javascript';
+        }
+
+        // 現在のファイルを読み込む
+        async function loadCurrentFile() {
+            const fileName = codeFiles[currentFileIndex];
+            currentLanguage = detectLanguage(fileName);
+            console.log(`📂 Loading file: ${fileName} (${currentFileIndex + 1}/${codeFiles.length}) - Language: ${currentLanguage}`);
+            
+            try {
+                const response = await fetch(fileName);
+                if (!response.ok) {
+                    throw new Error(`File not found: ${fileName}`);
+                }
+                
+                let code = await response.text();
+                
+                // 行頭のスペースをタブに変換（2スペース、4スペース、8スペース等）
+                code = code.split('\n').map(line => {
+                    // 行頭のスペースを数える
+                    const match = line.match(/^( +)/);
+                    if (match) {
+                        const spaces = match[1].length;
+                        // 2スペースごとに1タブに変換（または4スペースごと）
+                        const tabs = '\t'.repeat(Math.floor(spaces / 2));
+                        const remainingSpaces = ' '.repeat(spaces % 2);
+                        return tabs + remainingSpaces + line.substring(spaces);
+                    }
+                    return line;
+                }).join('\n');
+                
+                fullCode = code;
+                currentIndex = 0;
+                displayedCode = '';
+                autoCompletedChars = 0;
+                
+                startTyping();
+            } catch (error) {
+                console.error(`ファイルの読み込みに失敗しました: ${fileName}`, error);
+                fullCode = `// ファイルの読み込みに失敗しました: ${fileName}\n// ファイルが同じディレクトリにあることを確認してください。`;
+                currentIndex = 0;
+                displayedCode = '';
+                autoCompletedChars = 0;
+                
+                startTyping();
+            }
+        }
+        
+        // 次のファイルに移動
+        function loadNextFile() {
+            currentFileIndex = (currentFileIndex + 1) % codeFiles.length;
+            console.log(`➡️ Moving to next file (${currentFileIndex + 1}/${codeFiles.length})`);
+            
+            // 画面をクリア
+            document.getElementById('codeArea').innerHTML = '';
+            document.getElementById('lineNumbers').textContent = '1';
+            
+            // 少し待ってから次のファイルを読み込み
+            setTimeout(() => {
+                loadCurrentFile();
+            }, 1000);
+        }
+        
+        // 対応する閉じ括弧を取得
+        function getClosingBracket(char) {
+            const brackets = {
+                '(': ')',
+                '{': '}',
+                '[': ']'
+            };
+            return brackets[char] || null;
+        }
+        
+        // 各言語のキーワードを取得
+        function getLanguageKeywords(lang) {
+            const keywords = {
+                javascript: 'class|constructor|function|const|let|var|if|else|for|while|return|new|this|try|catch|throw|async|await|import|export|from|default|extends|static|get|set|case|switch|break|continue|do|typeof|instanceof|delete|void|yield|in|of',
+                typescript: 'class|constructor|function|const|let|var|if|else|for|while|return|new|this|try|catch|throw|async|await|import|export|from|default|extends|static|get|set|case|switch|break|continue|do|typeof|instanceof|delete|void|yield|in|of|interface|type|enum|namespace|abstract|implements|private|public|protected|readonly',
+                python: 'def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|raise|with|lambda|yield|async|await|pass|break|continue|and|or|not|in|is|None|True|False|self',
+                java: 'class|interface|extends|implements|public|private|protected|static|final|abstract|void|int|long|short|byte|float|double|boolean|char|String|if|else|for|while|do|switch|case|return|new|this|super|try|catch|finally|throw|throws|import|package|synchronized|volatile|transient',
+                c: 'int|long|short|char|float|double|void|unsigned|signed|struct|union|enum|typedef|sizeof|if|else|for|while|do|switch|case|return|break|continue|goto|static|extern|const|volatile|auto|register',
+                cpp: 'int|long|short|char|float|double|void|unsigned|signed|bool|class|struct|union|enum|namespace|template|typename|public|private|protected|virtual|friend|operator|new|delete|this|nullptr|if|else|for|while|do|switch|case|return|break|continue|try|catch|throw|const|static|extern|inline|constexpr|auto',
+                csharp: 'class|interface|struct|enum|namespace|using|public|private|protected|internal|static|readonly|const|virtual|override|abstract|sealed|partial|void|int|long|short|byte|float|double|decimal|bool|char|string|object|var|if|else|for|foreach|while|do|switch|case|return|new|this|base|try|catch|finally|throw|async|await',
+                php: 'class|interface|trait|extends|implements|public|private|protected|static|final|abstract|function|if|else|elseif|for|foreach|while|do|switch|case|return|new|this|parent|self|try|catch|finally|throw|use|namespace|echo|print|include|require|array|null|true|false',
+                kotlin: 'class|interface|object|fun|val|var|if|else|when|for|while|do|return|this|super|null|true|false|is|in|as|try|catch|finally|throw|public|private|protected|internal|open|abstract|override|sealed|data|companion|init',
+                ruby: 'class|module|def|if|elsif|else|unless|case|when|for|while|until|do|end|return|yield|self|super|true|false|nil|begin|rescue|ensure|raise|and|or|not|in',
+                go: 'func|var|const|type|struct|interface|package|import|if|else|for|range|switch|case|return|defer|go|chan|select|break|continue|fallthrough|goto|true|false|nil',
+                sql: 'SELECT|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|OUTER|ON|AND|OR|NOT|IN|LIKE|BETWEEN|ORDER|BY|GROUP|HAVING|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|ALTER|DROP|INDEX|VIEW|DATABASE|PRIMARY|KEY|FOREIGN|REFERENCES|NULL|DEFAULT|CONSTRAINT|UNION|DISTINCT|COUNT|SUM|AVG|MIN|MAX',
+                shell: 'if|then|else|elif|fi|case|esac|for|while|until|do|done|function|return|exit|break|continue|echo|printf|read|export|local|declare|set|unset|true|false',
+                rust: 'fn|let|mut|const|static|if|else|match|loop|while|for|in|return|break|continue|struct|enum|impl|trait|type|where|pub|mod|use|crate|self|super|async|await|move|ref|true|false|None|Some',
+                dart: 'class|interface|extends|implements|mixin|abstract|enum|void|var|final|const|if|else|for|while|do|switch|case|return|new|this|super|try|catch|finally|throw|rethrow|async|await|yield|import|export|library|part|true|false|null',
+                assembly: 'mov|push|pop|add|sub|mul|div|inc|dec|jmp|je|jne|jg|jl|call|ret|int|lea|cmp|test|and|or|xor|not|shl|shr|nop',
+                swift: 'class|struct|enum|protocol|extension|func|var|let|if|else|guard|switch|case|for|while|repeat|return|break|continue|fallthrough|self|super|init|deinit|true|false|nil|import|public|private|internal|fileprivate|static|mutating|throws|try|catch|async|await',
+                r: 'function|if|else|for|while|repeat|break|next|return|in|TRUE|FALSE|NULL|NA|NaN|Inf|library|require|source',
+                vb: 'Class|Module|Function|Sub|If|Then|Else|ElseIf|End|For|To|Step|Next|While|Do|Loop|Until|Select|Case|Return|New|Me|MyBase|True|False|Nothing|Public|Private|Protected|Friend|Shared|Dim|As|Integer|String|Boolean|Double|Imports|Namespace',
+                html: 'DOCTYPE|html|head|body|title|meta|link|script|style|div|span|a|img|ul|ol|li|table|tr|td|th|form|input|button|select|option|textarea|label|header|footer|nav|section|article|aside|main|figure|figcaption',
+                css: 'absolute|animation|background|border|bottom|box|calc|center|class|color|content|display|fixed|flex|float|font|grid|height|hover|id|inline|left|margin|max|min|opacity|padding|position|relative|right|rotate|scale|shadow|static|text|top|transform|transition|translate|width',
+                perl: 'if|else|elsif|unless|while|until|for|foreach|do|sub|my|our|local|return|use|require|package|new|bless|shift|unshift|push|pop|keys|values|each|grep|map|sort|split|join|print|say|chomp|chop|defined|undef',
+                d: 'import|module|class|struct|interface|enum|union|function|void|int|float|double|char|bool|if|else|for|while|do|foreach|switch|case|break|continue|return|auto|const|immutable|pure|nothrow|ref|out|in|body|unittest|assert|static|final|override|abstract|public|private|protected|package'
+            };
+            return keywords[lang] || keywords.javascript;
+        }
+        
+        // 各言語のコメント構文を取得
+        function getCommentPatterns(lang) {
+            const patterns = {
+                python: { line: '#', block: null },
+                ruby: { line: '#', block: null },
+                shell: { line: '#', block: null },
+                r: { line: '#', block: null },
+                sql: { line: '--', block: { start: '/\\*', end: '\\*/' } },
+                vb: { line: "'", block: null },
+                assembly: { line: ';', block: null },
+                perl: { line: '#', block: { start: '=begin', end: '=cut' } },
+                html: { line: null, block: { start: '<!--', end: '-->' } },
+                css: { line: null, block: { start: '/\\*', end: '\\*/' } },
+                d: { line: '//', block: { start: '/\\*', end: '\\*/' } }
+            };
+            return patterns[lang] || { line: '//', block: { start: '/\\*', end: '\\*/' } };
+        }
+
+        // シンタックスハイライト
+        function highlightSyntax(code) {
+            // TABを保護するためのプレースホルダー
+            const tabPlaceholder = '___TAB___';
+            code = code.replace(/\t/g, tabPlaceholder);
+            
+            // エスケープ処理（最初に行う）
+            code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // 一時的なプレースホルダーを使用
+            const placeholder = '___PLACEHOLDER___';
+            const protectedParts = [];
+            
+            // コメント構文を取得
+            const commentPatterns = getCommentPatterns(currentLanguage);
+            
+            // コメントを保護
+            if (commentPatterns.block) {
+                // ブロックコメント
+                const blockPattern = new RegExp(`${commentPatterns.block.start}[\\s\\S]*?${commentPatterns.block.end}`, 'gm');
+                code = code.replace(blockPattern, (match) => {
+                    const index = protectedParts.length;
+                    protectedParts.push(`<span class="comment">${match}</span>`);
+                    return `${placeholder}${index}${placeholder}`;
+                });
+            }
+            
+            // 行コメント
+            if (commentPatterns.line) {
+                const lineCommentEscaped = commentPatterns.line.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const linePattern = new RegExp(`${lineCommentEscaped}.*?$`, 'gm');
+                code = code.replace(linePattern, (match) => {
+                    const index = protectedParts.length;
+                    protectedParts.push(`<span class="comment">${match}</span>`);
+                    return `${placeholder}${index}${placeholder}`;
+                });
+            }
+            
+            // 文字列を保護（言語に応じて調整）
+            let stringPattern;
+            if (currentLanguage === 'python' || currentLanguage === 'ruby') {
+                // Python/Rubyは'、"、'''、"""をサポート
+                stringPattern = /('''[\s\S]*?'''|"""[\s\S]*?"""|'(?:[^'\\]|\\.)*?'|"(?:[^"\\]|\\.)*?")/g;
+            } else if (currentLanguage === 'php') {
+                // PHPは$を含む変数もサポート
+                stringPattern = /('(?:[^'\\]|\\.)*?'|"(?:[^"\\]|\\.)*?")/g;
+            } else {
+                // 一般的な文字列パターン
+                stringPattern = /(['"`])((?:\\.|(?!\1)[^\\])*?)\1/g;
+            }
+            
+            code = code.replace(stringPattern, (match) => {
+                const index = protectedParts.length;
+                protectedParts.push(`<span class="string">${match}</span>`);
+                return `${placeholder}${index}${placeholder}`;
+            });
+            
+            // 言語のキーワード
+            const keywords = getLanguageKeywords(currentLanguage);
+            const keywordPattern = new RegExp(`\\b(${keywords})\\b`, 'g');
+            code = code.replace(keywordPattern, '<span class="keyword">$1</span>');
+            
+            // 数値
+            code = code.replace(/\b(\d+\.?\d*|\.\d+|0x[0-9a-fA-F]+)\b/g, '<span class="number">$1</span>');
+            
+            // 関数名（言語に応じて調整）
+            if (currentLanguage === 'python') {
+                code = code.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '<span class="function">$1</span>(');
+            } else if (currentLanguage === 'assembly') {
+                // アセンブリは特別な処理不要
+            } else {
+                code = code.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g, '<span class="function">$1</span>(');
+            }
+            
+            // プロパティ（言語に応じて）
+            if (currentLanguage !== 'assembly' && currentLanguage !== 'sql') {
+                code = code.replace(/\.([a-zA-Z_$][a-zA-Z0-9_$]*)/g, '.<span class="property">$1</span>');
+            }
+            
+            // 保護された部分を復元
+            code = code.replace(new RegExp(`${placeholder}(\\d+)${placeholder}`, 'g'), (match, index) => {
+                return protectedParts[parseInt(index)];
+            });
+            
+            // TABを復元
+            code = code.replace(new RegExp(tabPlaceholder, 'g'), '\t');
+            
+            return code;
+        }
+
+        // タイピングアニメーション
+        function typeCharacter() {
+            if (currentIndex >= fullCode.length) {
+                clearInterval(typingInterval);
+                console.log('✅ File completed! Moving to next file...');
+                // ファイルが終わったら次のファイルに移動
+                loadNextFile();
+                return;
+            }
+
+            // 次の文字を取得
+            const nextChar = fullCode[currentIndex];
+            currentIndex++;
+            
+            // 自動補完で追加された文字がある場合の処理
+            if (autoCompletedChars > 0) {
+                // 自動補完された閉じ括弧があるか確認
+                const autoCompletedPart = displayedCode.slice(-autoCompletedChars);
+                
+                // 次の文字が自動補完された最初の文字と一致する場合
+                // （つまり閉じ括弧を入力する場合）
+                if (nextChar === autoCompletedPart[0]) {
+                    // 自動補完部分を1文字削除
+                    displayedCode = displayedCode.slice(0, -autoCompletedChars) + nextChar + autoCompletedPart.substring(1);
+                    autoCompletedChars--;
+                } else {
+                    // 他の文字を入力する場合は自動補完を全削除
+                    displayedCode = displayedCode.slice(0, -autoCompletedChars);
+                    autoCompletedChars = 0;
+                    displayedCode += nextChar;
+                }
+            } else {
+                // 表示用コードに追加
+                displayedCode += nextChar;
+            }
+            
+            // 開き括弧の場合は対応する閉じ括弧を自動追加
+            const closingBracket = getClosingBracket(nextChar);
+            
+            if (closingBracket && autoCompletedChars === 0) {
+                console.log('🔷 Auto-completing:', nextChar, '→', closingBracket);
+                displayedCode += closingBracket;
+                autoCompletedChars = 1;
+            }
+
+            const codeArea = document.getElementById('codeArea');
+            const lineNumbers = document.getElementById('lineNumbers');
+            
+            // カーソル位置を計算（自動補完された文字の前）
+            let codeBeforeCursor = displayedCode;
+            let codeAfterCursor = '';
+            
+            if (autoCompletedChars > 0) {
+                codeBeforeCursor = displayedCode.slice(0, -autoCompletedChars);
+                codeAfterCursor = displayedCode.slice(-autoCompletedChars);
+            }
+            
+            // ハイライトを適用して表示
+            const highlightedBefore = highlightSyntax(codeBeforeCursor);
+            let highlightedAfter = '';
+            if (codeAfterCursor) {
+                // 自動補完部分をエスケープして灰色で表示
+                const escapedAfter = codeAfterCursor.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                highlightedAfter = '<span class="auto-complete">' + escapedAfter + '</span>';
+            }
+            codeArea.innerHTML = highlightedBefore + '<span class="cursor"></span>' + highlightedAfter;
+
+            // 行番号を更新（元のコードの行数で）
+            updateLineNumbers(fullCode.substring(0, currentIndex));
+
+            // 自動スクロール（行番号も同期）
+            codeArea.scrollTop = codeArea.scrollHeight;
+            lineNumbers.scrollTop = lineNumbers.scrollHeight;
+        }
+
+        // 行番号を更新
+        function updateLineNumbers(text) {
+            const lines = text.split('\n');
+            const currentLine = lines.length;
+            
+            const lineNumbers = document.getElementById('lineNumbers');
+            let lineNumbersHtml = '';
+            for (let i = 1; i <= currentLine; i++) {
+                lineNumbersHtml += i + '\n';
+            }
+            lineNumbers.textContent = lineNumbersHtml;
+        }
+
+        // タイピング開始
+        function startTyping() {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+            }
+            typingInterval = setInterval(typeCharacter, typingSpeed);
+        }
+
+        // スクロール同期を設定
+        function setupScrollSync() {
+            const codeArea = document.getElementById('codeArea');
+            const lineNumbers = document.getElementById('lineNumbers');
+            
+            // コードエリアがスクロールされたら行番号も同期
+            codeArea.addEventListener('scroll', () => {
+                lineNumbers.scrollTop = codeArea.scrollTop;
+            });
+        }
+        
+        // 数字ファイルを自動検出
+        async function detectNumberedFiles() {
+            console.log('🔍 数字ファイルを自動検出中...');
+            const detectedFiles = [];
+            let fileNumber = 1;
+            let consecutiveMisses = 0;
+            const maxMisses = 3; // 連続して3つ見つからなかったら終了
+            
+            while (consecutiveMisses < maxMisses) {
+                let foundFile = false;
+                
+                // 各拡張子を試す
+                for (const ext of possibleExtensions) {
+                    const filename = `${fileNumber}.${ext}`;
+                    
+                    // ファイルの存在を確認
+                    try {
+                        const response = await fetch(filename, { method: 'HEAD' });
+                        if (response.ok) {
+                            detectedFiles.push(filename);
+                            console.log(`✓ 見つかりました: ${filename}`);
+                            foundFile = true;
+                            break; // この番号のファイルが見つかったら次の番号へ
+                        }
+                    } catch (error) {
+                        // エラーは無視して次の拡張子を試す
+                    }
+                }
+                
+                if (foundFile) {
+                    consecutiveMisses = 0;
+                } else {
+                    consecutiveMisses++;
+                }
+                
+                fileNumber++;
+            }
+            
+            if (detectedFiles.length === 0) {
+                console.error('❌ ファイルが見つかりませんでした');
+                alert('表示するファイルが見つかりませんでした。\n1.py, 2.java, 3.js などのファイルを配置してください。');
+                return false;
+            }
+            
+            codeFiles = detectedFiles;
+            console.log(`✓ ${codeFiles.length}個のファイルを検出しました:`, codeFiles);
+            return true;
+        }
+
+        // ページ読み込み時に開始
+        window.addEventListener('load', async () => {
+            setupScrollSync();
+            
+            // ファイルを自動検出
+            const filesDetected = await detectNumberedFiles();
+            
+            if (filesDetected) {
+                // 最初のファイルを読み込み
+                loadCurrentFile();
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポートフォリオサイト</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <nav class="navbar">
+      <div class="container">
+        <div class="logo">
+          <h1>MyPortfolio</h1>
+        </div>
+        <ul class="nav-menu">
+          <li><a href="#home">ホーム</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#skills">スキル</a></li>
+          <li><a href="#projects">プロジェクト</a></li>
+          <li><a href="#contact">お問い合わせ</a></li>
+        </ul>
+        <div class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ヒーローセクション -->
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <h2 class="hero-title">Web Developer</h2>
+      <p class="hero-subtitle">フロントエンド・バックエンド開発</p>
+      <a href="#contact" class="btn btn-primary">お問い合わせ</a>
+    </div>
+  </section>
+
+  <!-- About セクション -->
+  <section id="about" class="section">
+    <div class="container">
+      <h2 class="section-title">About Me</h2>
+      <div class="about-content">
+        <div class="about-image">
+          <img src="profile.jpg" alt="プロフィール画像">
+        </div>
+        <div class="about-text">
+          <h3>山田 太郎</h3>
+          <p>フルスタックWebデベロッパー</p>
+          <p>
+            10年以上の経験を持つWebデベロッパーです。
+            最新の技術を活用し、ユーザー体験を重視した
+            Webアプリケーション開発を得意としています。
+          </p>
+          <div class="social-links">
+            <a href="#" class="social-link">GitHub</a>
+            <a href="#" class="social-link">Twitter</a>
+            <a href="#" class="social-link">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- スキルセクション -->
+  <section id="skills" class="section bg-light">
+    <div class="container">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-grid">
+        <!-- フロントエンド -->
+        <div class="skill-category">
+          <h3>Frontend</h3>
+          <div class="skill-list">
+            <div class="skill-item">
+              <span class="skill-name">HTML/CSS</span>
+              <div class="skill-bar">
+                <div class="skill-progress" style="width: 95%"></div>
+              </div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">JavaScript</span>
+              <div class="skill-bar">
+                <div class="skill-progress" style="width: 90%"></div>
+              </div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">React</span>
+              <div class="skill-bar">
+                <div class="skill-progress" style="width: 85%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- バックエンド -->
+        <div class="skill-category">
+          <h3>Backend</h3>
+          <div class="skill-list">
+            <div class="skill-item">
+              <span class="skill-name">Node.js</span>
+              <div class="skill-bar">
+                <div class="skill-progress" style="width: 88%"></div>
+              </div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">Python</span>
+              <div class="skill-bar">
+                <div class="skill-progress" style="width: 82%"></div>
+              </div>
+            </div>
+            <div class="skill-item">
+              <span class="skill-name">SQL</span>
+              <div class="skill-bar">
+                <div class="skill-progress" style="width: 85%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- プロジェクトセクション -->
+  <section id="projects" class="section">
+    <div class="container">
+      <h2 class="section-title">Projects</h2>
+      <div class="projects-grid">
+        <!-- プロジェクト1 -->
+        <div class="project-card">
+          <div class="project-image">
+            <img src="project1.jpg" alt="プロジェクト1">
+          </div>
+          <div class="project-info">
+            <h3>ECサイト構築</h3>
+            <p>React + Node.js を使用したフルスタックECサイト</p>
+            <div class="project-tags">
+              <span class="tag">React</span>
+              <span class="tag">Node.js</span>
+              <span class="tag">MongoDB</span>
+            </div>
+            <a href="#" class="project-link">詳細を見る →</a>
+          </div>
+        </div>
+
+        <!-- プロジェクト2 -->
+        <div class="project-card">
+          <div class="project-image">
+            <img src="project2.jpg" alt="プロジェクト2">
+          </div>
+          <div class="project-info">
+            <h3>タスク管理アプリ</h3>
+            <p>チーム向けプロジェクト管理ツール</p>
+            <div class="project-tags">
+              <span class="tag">Vue.js</span>
+              <span class="tag">Firebase</span>
+              <span class="tag">TypeScript</span>
+            </div>
+            <a href="#" class="project-link">詳細を見る →</a>
+          </div>
+        </div>
+
+        <!-- プロジェクト3 -->
+        <div class="project-card">
+          <div class="project-image">
+            <img src="project3.jpg" alt="プロジェクト3">
+          </div>
+          <div class="project-info">
+            <h3>ブログプラットフォーム</h3>
+            <p>マークダウン対応のブログシステム</p>
+            <div class="project-tags">
+              <span class="tag">Next.js</span>
+              <span class="tag">PostgreSQL</span>
+              <span class="tag">AWS</span>
+            </div>
+            <a href="#" class="project-link">詳細を見る →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- お問い合わせセクション -->
+  <section id="contact" class="section bg-light">
+    <div class="container">
+      <h2 class="section-title">Contact</h2>
+      <div class="contact-content">
+        <form class="contact-form">
+          <div class="form-group">
+            <label for="name">お名前</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">メールアドレス</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="message">メッセージ</label>
+            <textarea id="message" name="message" rows="5" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">送信</button>
+        </form>
+        <div class="contact-info">
+          <h3>Get in Touch</h3>
+          <p>
+            プロジェクトのご相談やお仕事のご依頼は
+            お気軽にお問い合わせください。
+          </p>
+          <ul class="info-list">
+            <li>
+              <strong>Email:</strong>
+              <a href="mailto:contact@example.com">contact@example.com</a>
+            </li>
+            <li>
+              <strong>Location:</strong>
+              東京都渋谷区
+            </li>
+            <li>
+              <strong>Phone:</strong>
+              090-1234-5678
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- フッター -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2024 MyPortfolio. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="#">プライバシーポリシー</a>
+        <a href="#">利用規約</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
