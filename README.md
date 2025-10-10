@@ -3,7 +3,7 @@
 リアルタイムコードエディタ風のタイピングアニメーションを表示するWebアプリケーション。
 24種類のプログラミング言語に対応し、VS Codeのような自動補完機能とシンタックスハイライトを備えています。
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Languages](https://img.shields.io/badge/languages-24-orange.svg)
 
@@ -16,6 +16,8 @@
 - 📏 **行番号表示** - エディタ風の行番号とスクロール同期
 - ⚡ **高速タイピング** - 50文字/秒のスムーズなアニメーション
 - 🎯 **TAB対応** - インデントをTAB文字として正しく表示
+- 🎲 **ランダム再生** - `0.txt`ファイルを配置すると順番をランダムに表示
+- 🔍 **自動ファイル検出** - 数字ファイル名を自動検出、拡張子も自動判定
 
 ## 🎥 デモ
 
@@ -42,59 +44,62 @@ cd code-typing-animation
 2. 表示したいコードファイルを配置
 ```
 project/
-├── typing-animation.html
-├── 1.py
-├── 2.java
-├── 3.js
-├── 4.c
-├── ... (24.jsまで)
+├── index.html        # メインファイル
+├── 0.txt             # (オプション) ランダム再生を有効化
+├── 1.html            # 1番目に表示
+├── 2.java            # 2番目に表示
+├── 3.js              # 3番目に表示
+├── ... (任意の数字ファイル)
 └── README.md
 ```
 
 3. ブラウザで開く
 ```bash
-open typing-animation.html
+open index.html
 ```
 
-### ファイルリストのカスタマイズ
+### 🎲 ランダム順で再生
 
-`typing-animation.html` の98行目を編集：
+ファイルをランダムな順番で表示したい場合は、空の`0.txt`ファイルを配置してください：
 
-```javascript
-// 表示したいファイルを追加
-const codeFiles = ['1.js', '2.js', '3.js', 'main.js'];
+```bash
+touch 0.txt
 ```
 
-### 複数言語の例
+これで、ページを読み込むたびに異なる順番でファイルが表示されます。
 
-```javascript
-const codeFiles = [
-    '1.py',       // Python
-    '2.java',     // Java
-    '3.js',       // JavaScript
-    '4.c',        // C
-    '5.cpp',      // C++
-    '6.cs',       // C#
-    '7.php',      // PHP
-    '8.kt',       // Kotlin
-    '9.rb',       // Ruby
-    '10.go',      // Go
-    '11.sql',     // SQL
-    '12.ts',      // TypeScript
-    '13.sh',      // Shell
-    '14.rs',      // Rust
-    '15.dart',    // Dart
-    '16.asm',     // Assembly
-    '17.swift',   // Swift
-    '18.r',       // R
-    '19.vb',      // Visual Basic
-    '20.html',    // HTML
-    '21.css',     // CSS
-    '22.pl',      // Perl
-    '23.d',       // D
-    '24.js'       // JavaScript (eCommerce)
-];
+**通常順に戻す場合**：
+```bash
+rm 0.txt
 ```
+
+### 🔍 自動ファイル検出
+
+ファイルリストを手動で編集する必要はありません。以下のルールで自動検出されます：
+
+1. **ファイル名**: `1.拡張子`, `2.拡張子`, `3.拡張子`...の形式
+2. **拡張子**: 24種類の対応拡張子から自動判定
+3. **順番**: ファイル名の数字順（`0.txt`がある場合はランダム）
+
+**例**:
+```
+1.html    → 1番目
+2.py      → 2番目
+3.java    → 3番目
+10.js     → 10番目
+```
+
+### 対応拡張子一覧
+
+自動検出される拡張子：
+
+```
+.py .java .js .c .cpp .cs .php .kt .rb .go .sql .ts 
+.sh .rs .dart .asm .swift .r .vb .html .css .pl .d .txt
+```
+
+**複数の拡張子で同じ番号がある場合**：
+- `1.py`と`1.js`が両方ある場合 → リストの前方の拡張子が優先されます
 
 ## 📚 対応言語と拡張子
 
@@ -195,17 +200,18 @@ CSSを編集してお好みのカラーテーマに：
 
 ```
 project/
-├── typing-animation.html    # メインアプリケーション
-├── 1.py                     # Pythonサンプル
-├── 2.java                   # Javaサンプル
-├── 3.js                     # JavaScriptサンプル
-├── 4.c                      # Cサンプル
-├── ... (5.cpp ~ 19.vb)
-├── 20.html                  # HTMLサンプル
-├── 21.css                   # CSSサンプル
-├── 22.pl                    # Perlサンプル
-├── 23.d                     # Dサンプル
-├── 24.js                    # JavaScript (eCommerce)
+├── index.html              # メインアプリケーション
+├── 0.txt                   # (オプション) ランダム再生フラグ
+├── 1.html                  # HTMLサンプル
+├── 2.java                  # Javaサンプル
+├── 3.js                    # JavaScriptサンプル
+├── 4.c                     # Cサンプル
+├── 5.cpp ~ 19.vb           # 各言語のサンプル
+├── 20.py                   # Pythonサンプル
+├── 21.css                  # CSSサンプル
+├── 22.pl                   # Perlサンプル
+├── 23.d                    # Dサンプル
+├── 24.js                   # JavaScript (eCommerce)
 └── README.md               # このファイル
 ```
 
@@ -231,6 +237,8 @@ project/
 
 ## 🔜 今後の予定
 
+- [x] ~~自動ファイル検出機能~~ ✅ 実装済み
+- [x] ~~ランダム再生機能~~ ✅ 実装済み（0.txt）
 - [ ] タイピング速度の動的調整（UI追加）
 - [ ] ファイル切り替えアニメーション
 - [ ] テーマ切り替え機能（Light/Dark）

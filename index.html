@@ -471,6 +471,16 @@
             });
         }
         
+        // 配列をシャッフルする関数
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
         // 数字ファイルを自動検出
         async function detectNumberedFiles() {
             console.log('🔍 数字ファイルを自動検出中...');
@@ -478,6 +488,18 @@
             let fileNumber = 1;
             let consecutiveMisses = 0;
             const maxMisses = 3; // 連続して3つ見つからなかったら終了
+            
+            // 0.txtの存在確認（ランダム化フラグ）
+            let randomizeOrder = false;
+            try {
+                const response = await fetch('0.txt', { method: 'HEAD' });
+                if (response.ok) {
+                    randomizeOrder = true;
+                    console.log('🎲 0.txtが検出されました - ランダム順で表示します');
+                }
+            } catch (error) {
+                // 0.txtがない場合は通常順
+            }
             
             while (consecutiveMisses < maxMisses) {
                 let foundFile = false;
@@ -515,8 +537,15 @@
                 return false;
             }
             
-            codeFiles = detectedFiles;
-            console.log(`✓ ${codeFiles.length}個のファイルを検出しました:`, codeFiles);
+            // 0.txtが存在する場合はランダムに並び替え
+            if (randomizeOrder) {
+                codeFiles = shuffleArray(detectedFiles);
+                console.log(`🎲 ランダム順に並び替えました:`, codeFiles);
+            } else {
+                codeFiles = detectedFiles;
+                console.log(`✓ ${codeFiles.length}個のファイルを検出しました:`, codeFiles);
+            }
+            
             return true;
         }
 
