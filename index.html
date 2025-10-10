@@ -360,7 +360,7 @@
                 html: { line: null, block: { start: '<!--', end: '-->' } },
                 css: { line: null, block: { start: '/\\*', end: '\\*/' } },
                 d: { line: '//', block: { start: '/\\*', end: '\\*/' } },
-                nadesiko: { line: '#', block: { start: '/*', end: '*/' } },
+                nadesiko: { line: '#', block: { start: '/\\*', end: '\\*/' } },
                 objectivec: { line: '//', block: { start: '/\\*', end: '\\*/' } }
             };
             return patterns[lang] || { line: '//', block: { start: '/\\*', end: '\\*/' } };
