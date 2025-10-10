@@ -1,15 +1,15 @@
 # 🎬 Multi-Language Code Typing Animation
 
 リアルタイムコードエディタ風のタイピングアニメーションを表示するWebアプリケーション。
-24種類のプログラミング言語に対応し、VS Codeのような自動補完機能とシンタックスハイライトを備えています。
+26種類のプログラミング言語に対応し、VS Codeのような自動補完機能とシンタックスハイライトを備えています。
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Languages](https://img.shields.io/badge/languages-24-orange.svg)
+![Languages](https://img.shields.io/badge/languages-26-orange.svg)
 
 ## ✨ 特徴
 
-- 🌈 **24言語対応** - Python, Java, JavaScript, C, C++, C#, PHP, Kotlin, Ruby, Go, SQL, TypeScript, Shell, Rust, Dart, Assembly, Swift, R, Visual Basic, HTML, CSS, Perl, D
+- 🌈 **26言語対応** - Python, Java, JavaScript, C, C++, C#, PHP, Kotlin, Ruby, Go, SQL, TypeScript, Shell, Rust, Dart, Assembly, Swift, R, Visual Basic, HTML, CSS, Perl, D, **なでしこ**, **Objective-C**
 - 🎨 **リアルタイムシンタックスハイライト** - 各言語のキーワード、文字列、コメントを自動で色分け
 - 🔄 **自動ファイル切り替え** - ファイルが終わると自動的に次のファイルへ移動し、無限ループ
 - 💡 **VS Code風の自動補完** - `(`, `{`, `[` を入力すると自動的に対応する閉じ括弧を表示
@@ -97,7 +97,8 @@ rm 0.txt
 
 ```
 .py .java .js .c .cpp .cs .php .kt .rb .go .sql .ts 
-.sh .rs .dart .asm .swift .r .vb .html .css .pl .d .txt
+.sh .rs .dart .asm .swift .r .vb .html .css .pl .d
+.nako .nako3 .m .mm .txt
 ```
 
 **複数の拡張子で同じ番号がある場合**：
@@ -130,6 +131,8 @@ rm 0.txt
 | **CSS** | `.css` | `/* */` | `color`, `background`, `display`, `flex` |
 | **Perl** | `.pl` | `#`, `=begin/=cut` | `sub`, `my`, `if`, `foreach` |
 | **D** | `.d` | `//`, `/* */` | `class`, `struct`, `import`, `auto` |
+| **なでしこ** | `.nako`, `.nako3` | `#`, `/* */` | `もし`, `ならば`, `繰り返す`, `表示` |
+| **Objective-C** | `.m`, `.mm` | `//`, `/* */` | `@interface`, `@implementation`, `@property` |
 
 ## ⚙️ カスタマイズ
 

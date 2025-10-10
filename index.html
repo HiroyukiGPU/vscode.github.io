@@ -191,7 +191,7 @@
         const possibleExtensions = [
             'py', 'java', 'js', 'c', 'cpp', 'cs', 'php', 'kt', 'rb', 'go',
             'sql', 'ts', 'sh', 'rs', 'dart', 'asm', 'swift', 'r', 'vb',
-            'html', 'css', 'pl', 'd', 'txt'
+            'html', 'css', 'pl', 'd', 'nako', 'nako3', 'm', 'txt'
         ];
         
         let codeFiles = []; // 動的に検出されたファイルリスト
@@ -235,7 +235,11 @@
                 'htm': 'html',
                 'css': 'css',
                 'pl': 'perl',
-                'd': 'd'
+                'd': 'd',
+                'nako': 'nadesiko',
+                'nako3': 'nadesiko',
+                'm': 'objectivec',
+                'mm': 'objectivec'
             };
             return langMap[ext] || 'javascript';
         }
@@ -335,7 +339,9 @@
                 html: 'DOCTYPE|html|head|body|title|meta|link|script|style|div|span|a|img|ul|ol|li|table|tr|td|th|form|input|button|select|option|textarea|label|header|footer|nav|section|article|aside|main|figure|figcaption',
                 css: 'absolute|animation|background|border|bottom|box|calc|center|class|color|content|display|fixed|flex|float|font|grid|height|hover|id|inline|left|margin|max|min|opacity|padding|position|relative|right|rotate|scale|shadow|static|text|top|transform|transition|translate|width',
                 perl: 'if|else|elsif|unless|while|until|for|foreach|do|sub|my|our|local|return|use|require|package|new|bless|shift|unshift|push|pop|keys|values|each|grep|map|sort|split|join|print|say|chomp|chop|defined|undef',
-                d: 'import|module|class|struct|interface|enum|union|function|void|int|float|double|char|bool|if|else|for|while|do|foreach|switch|case|break|continue|return|auto|const|immutable|pure|nothrow|ref|out|in|body|unittest|assert|static|final|override|abstract|public|private|protected|package'
+                d: 'import|module|class|struct|interface|enum|union|function|void|int|float|double|char|bool|if|else|for|while|do|foreach|switch|case|break|continue|return|auto|const|immutable|pure|nothrow|ref|out|in|body|unittest|assert|static|final|override|abstract|public|private|protected|package',
+                nadesiko: 'もし|ならば|違えば|そうでなければ|ここまで|繰り返す|回|間|反復|それ|変数|定数|配列|ハッシュ|関数|手順|戻る|続ける|抜ける|エラー|実行速度優先|表示|改行|言う|尋ねる|空|未定義|真|偽|はい|いいえ',
+                objectivec: 'interface|implementation|protocol|property|synthesize|dynamic|class|self|super|nil|YES|NO|if|else|for|while|do|switch|case|return|break|continue|try|catch|finally|throw|import|include|define|ifdef|ifndef|endif|pragma|atomic|nonatomic|strong|weak|copy|assign|readonly|readwrite|getter|setter|IBOutlet|IBAction'
             };
             return keywords[lang] || keywords.javascript;
         }
@@ -353,7 +359,9 @@
                 perl: { line: '#', block: { start: '=begin', end: '=cut' } },
                 html: { line: null, block: { start: '<!--', end: '-->' } },
                 css: { line: null, block: { start: '/\\*', end: '\\*/' } },
-                d: { line: '//', block: { start: '/\\*', end: '\\*/' } }
+                d: { line: '//', block: { start: '/\\*', end: '\\*/' } },
+                nadesiko: { line: '#', block: { start: '/*', end: '*/' } },
+                objectivec: { line: '//', block: { start: '/\\*', end: '\\*/' } }
             };
             return patterns[lang] || { line: '//', block: { start: '/\\*', end: '\\*/' } };
         }
