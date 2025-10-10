@@ -1,151 +1,155 @@
-// Java Example - ユーザー管理システム
-package com.example.usermanagement;
-
+// Java Example - シンプルな図書館管理システム
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.Scanner;
 
-/**
- * ユーザー管理システムのメインクラス
- * @author Developer
- * @version 1.0
- */
-public class UserManagementSystem {
+public class LibrarySystem {
     
-    private List<User> users;
-    DatabaseConnection dbConnection;  // package-private for main access
-    
-    public UserManagementSystem(String dbUrl) {
-        this.users = new ArrayList<>();
-        this.dbConnection = new DatabaseConnection(dbUrl);
-    }
-    
-    /**
-     * 新しいユーザーを登録
-     * @param name ユーザー名
-     * @param email メールアドレス
-     * @return 登録されたユーザー
-     */
-    public User registerUser(String name, String email) {
-        if (name == null || email == null) {
-            throw new IllegalArgumentException("名前とメールアドレスは必須です");
+    // 本のクラス（内部クラス）
+    static class Book {
+        private int id;
+        private String title;
+        private String author;
+        private boolean isBorrowed;
+        
+        public Book(int id, String title, String author) {
+            this.id = id;
+            this.title = title;
+            this.author = author;
+            this.isBorrowed = false;
         }
         
-        User newUser = new User(generateUserId(), name, email);
-        users.add(newUser);
-        
-        System.out.println("ユーザー登録完了: " + newUser.getName());
-        return newUser;
-    }
-    
-    /**
-     * ユーザーIDでユーザーを検索
-     * @param userId ユーザーID
-     * @return Optional<User>
-     */
-    public Optional<User> findUserById(int userId) {
-        return users.stream()
-                   .filter(user -> user.getId() == userId)
-                   .findFirst();
-    }
-    
-    /**
-     * すべてのユーザーを取得
-     * @return ユーザーリスト
-     */
-    public List<User> getAllUsers() {
-        return new ArrayList<>(users);
-    }
-    
-    private int generateUserId() {
-        return users.size() + 1;
-    }
-    
-    public static void main(String[] args) {
-        System.out.println("=== ユーザー管理システム ===\n");
-        
-        UserManagementSystem system = new UserManagementSystem("jdbc:mysql://localhost:3306/userdb");
-        
-        // データベース接続
-        system.dbConnection.connect();
-        
-        // ユーザー登録
-        System.out.println("\n--- ユーザー登録 ---");
-        User user1 = system.registerUser("田中太郎", "tanaka@example.com");
-        User user2 = system.registerUser("佐藤花子", "sato@example.com");
-        User user3 = system.registerUser("鈴木一郎", "suzuki@example.com");
-        
-        // ユーザー検索
-        System.out.println("\n--- ユーザー検索 ---");
-        Optional<User> foundUser = system.findUserById(1);
-        foundUser.ifPresent(user -> 
-            System.out.println("見つかったユーザー: " + user.getName())
-        );
-        
-        // 全ユーザー表示
-        System.out.println("\n--- 全ユーザー一覧 ---");
-        for (User user : system.getAllUsers()) {
-            System.out.println(user);
+        public void borrow() {
+            if (!isBorrowed) {
+                isBorrowed = true;
+                System.out.println("✓ 「" + title + "」を借りました");
+            } else {
+                System.out.println("✗ 「" + title + "」は貸出中です");
+            }
         }
         
-        // データベース切断
+        public void returnBook() {
+            if (isBorrowed) {
+                isBorrowed = false;
+                System.out.println("✓ 「" + title + "」を返却しました");
+            } else {
+                System.out.println("✗ この本は借りられていません");
+            }
+        }
+        
+        public void display() {
+            String status = isBorrowed ? "貸出中" : "在庫あり";
+            System.out.println(String.format("[%d] %s - %s (%s)", 
+                id, title, author, status));
+        }
+    }
+    
+    // 図書館のメイン処理
+    private ArrayList<Book> books;
+    
+    public LibrarySystem() {
+        books = new ArrayList<>();
+        initializeBooks();
+    }
+    
+    private void initializeBooks() {
+        books.add(new Book(1, "Javaプログラミング入門", "山田太郎"));
+        books.add(new Book(2, "アルゴリズムとデータ構造", "佐藤花子"));
+        books.add(new Book(3, "デザインパターン", "鈴木一郎"));
+        books.add(new Book(4, "Webアプリケーション開発", "田中次郎"));
+        books.add(new Book(5, "データベース設計", "高橋美咲"));
+    }
+    
+    public void displayAllBooks() {
+        System.out.println("\n=== 蔵書一覧 ===");
+        for (Book book : books) {
+            book.display();
+        }
         System.out.println();
-        system.dbConnection.disconnect();
+    }
+    
+    public void borrowBook(int id) {
+        for (Book book : books) {
+            if (book.id == id) {
+                book.borrow();
+                return;
+            }
+        }
+        System.out.println("✗ 本が見つかりません");
+    }
+    
+    public void returnBook(int id) {
+        for (Book book : books) {
+            if (book.id == id) {
+                book.returnBook();
+                return;
+            }
+        }
+        System.out.println("✗ 本が見つかりません");
+    }
+    
+    public void searchByTitle(String keyword) {
+        System.out.println("\n=== 検索結果: \"" + keyword + "\" ===");
+        boolean found = false;
         
-        System.out.println("\n=== システム終了 ===");
-    }
-}
-
-/**
- * ユーザークラス
- */
-class User {
-    private int id;
-    private String name;
-    private String email;
-    private LocalDateTime createdAt;
-    
-    public User(int id, String name, String email) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.createdAt = LocalDateTime.now();
+        for (Book book : books) {
+            if (book.title.contains(keyword)) {
+                book.display();
+                found = true;
+            }
+        }
+        
+        if (!found) {
+            System.out.println("該当する本が見つかりませんでした");
+        }
+        System.out.println();
     }
     
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    
-    @Override
-    public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return String.format("User[id=%d, name=%s, email=%s, created=%s]",
-                           id, name, email, createdAt.format(formatter));
-    }
-}
-
-class DatabaseConnection {
-    private String url;
-    private boolean connected;
-    
-    public DatabaseConnection(String url) {
-        this.url = url;
-        this.connected = false;
-    }
-    
-    public void connect() {
-        System.out.println("データベースに接続しました: " + url);
-        this.connected = true;
-    }
-    
-    public void disconnect() {
-        System.out.println("データベース接続を切断しました");
-        this.connected = false;
-    }
-    
-    public boolean isConnected() {
-        return connected;
+    // メイン関数
+    public static void main(String[] args) {
+        System.out.println("╔════════════════════════════════╗");
+        System.out.println("║   図書館管理システム v1.0     ║");
+        System.out.println("╚════════════════════════════════╝\n");
+        
+        LibrarySystem library = new LibrarySystem();
+        
+        // すべての本を表示
+        library.displayAllBooks();
+        
+        // 本を借りる
+        System.out.println("--- 貸出処理 ---");
+        library.borrowBook(1);
+        library.borrowBook(3);
+        library.borrowBook(1);  // すでに貸出中
+        System.out.println();
+        
+        // 状態確認
+        library.displayAllBooks();
+        
+        // 本を返却
+        System.out.println("--- 返却処理 ---");
+        library.returnBook(1);
+        library.returnBook(5);  // 借りていない本
+        System.out.println();
+        
+        // 状態確認
+        library.displayAllBooks();
+        
+        // 検索機能
+        library.searchByTitle("プログラミング");
+        library.searchByTitle("データ");
+        
+        // 統計情報
+        int borrowedCount = 0;
+        for (Book book : library.books) {
+            if (book.isBorrowed) {
+                borrowedCount++;
+            }
+        }
+        
+        System.out.println("=== 統計情報 ===");
+        System.out.println("総蔵書数: " + library.books.size() + "冊");
+        System.out.println("貸出中: " + borrowedCount + "冊");
+        System.out.println("在庫あり: " + (library.books.size() - borrowedCount) + "冊");
+        System.out.println("\n✓ システムを終了しました");
     }
 }
